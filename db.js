@@ -88,10 +88,11 @@
     ];
     for(const [store,key] of maps){
       try{
-        if((await all(store)).length) continue;
         const raw=localStorage.getItem(key);
         if(raw){
           const arr=JSON.parse(raw);
+          // IMPORTANT: merge legacy data even when IndexedDB already has seeded/test data.
+          // Existing records with the same id are updated; old records are restored.
           if(Array.isArray(arr)&&arr.length) await putMany(store,arr);
         }
       }catch(e){}
