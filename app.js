@@ -27,6 +27,20 @@ async function bootCatalog(){
   showCategory('الكل');
 }
 function esc(s=''){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+function renderDeliveryZones(){
+  const el=document.getElementById('deliveryZone');
+  if(!el)return;
+  el.innerHTML=deliveryZones.map(z=>`<option value="${esc(z.id)}">${esc(z.name)} — $${Number(z.fee||0).toFixed(2)}</option>`).join('');
+  updateDeliveryFee();
+}
+function updateDeliveryFee(){
+  const el=document.getElementById('deliveryZone');
+  const feeEl=document.getElementById('deliveryFee');
+  if(!el||!feeEl)return;
+  const z=deliveryZones.find(x=>x.id===el.value);
+  feeEl.textContent='$'+Number(z?.fee||0).toFixed(2);
+}
+
 function showCategory(cat){active=cat;document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.cat===cat));document.getElementById('productsTitle').textContent=cat==='الكل'?'منتجات مميزة':cat;render();document.getElementById('shop').scrollIntoView({behavior:'smooth',block:'start'})}
 function render(){const q=document.getElementById('searchInput').value.trim().toLowerCase();let filtered=products.filter(p=>(active==='الكل'||p.cat===active)&&(!q||p.name.toLowerCase().includes(q)||p.cat.toLowerCase().includes(q)));const sort=document.getElementById('sortSelect')?.value||'default';if(sort==='low')filtered.sort((a,b)=>a.price-b.price);if(sort==='high')filtered.sort((a,b)=>b.price-a.price);if(sort==='name')filtered.sort((a,b)=>a.name.localeCompare(b.name,'ar'));document.getElementById('resultCount').textContent=filtered.length+' منتج';document.getElementById('empty').hidden=filtered.length!==0;list.innerHTML=filtered.map(p=>{const out=p.stock<=0;return `<article class="card" onclick="openProduct('${p.id}')"><div class="pic">${p.image?`<img src="${p.image}" alt="${esc(p.name)}">`:(p.emoji||'🛍️')}</div>${p.badge?`<span class="badge">${esc(p.badge)}</span>`:''}<button class="heart ${wishlist.has(p.id)?'liked':''}" onclick="event.stopPropagation();toggleWish('${p.id}')">${wishlist.has(p.id)?'♥':'♡'}</button><h3>${esc(p.name)}</h3><div class="price">$${p.price}</div>${out?'<small class="out">غير متوفر حالياً</small>':`<button class="add" onclick="event.stopPropagation();addToCart('${p.id}')">أضيفي للسلة</button>`}</article>`}).join('')}
 function openProduct(id){const p=products.find(x=>x.id===id);if(!p)return;document.getElementById('productModal').classList.add('open');const sizes=p.size?p.size.split(',').map(x=>x.trim()).filter(Boolean):[];const colors=p.color?p.color.split(',').map(x=>x.trim()).filter(Boolean):[];document.getElementById('modalContent').innerHTML=`<div class="modal-img">${p.image?`<img src="${p.image}" alt="${esc(p.name)}">`:p.emoji||'🛍️'}</div><div><span class="badge">${esc(p.badge||p.cat)}</span><h2>${esc(p.name)}</h2><div class="modal-price">$${p.price}</div><p>${esc(p.desc||'منتج من مجموعة NOUJOUD. تواصلي معنا لمعرفة التفاصيل والتوفر.')}</p>${sizes.length?`<label class="choice-label">المقاس<select id="modalSize">${sizes.map(x=>`<option>${esc(x)}</option>`).join('')}</select></label>`:''}${colors.length?`<label class="choice-label">اللون<select id="modalColor">${colors.map(x=>`<option>${esc(x)}</option>`).join('')}</select></label>`:''}<p><b>التوفر:</b> ${p.stock>0?`متوفر (${p.stock})`:'غير متوفر'}</p>${p.stock>0?`<label class="choice-label">الكمية<input id="modalQty" type="number" min="1" max="${p.stock}" value="1"></label><div class="modal-actions"><button class="primary" onclick="addModalToCart('${p.id}');closeProduct()">أضيفي للسلة</button><button class="whatsapp-product" onclick="orderProduct('${p.id}')">💬 اطلب عبر WhatsApp</button></div>`:`<button class="whatsapp-product full" onclick="orderProduct('${p.id}')">💬 اسألي نجود عن التوفر</button>`}</div>`}
